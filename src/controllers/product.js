@@ -6,7 +6,7 @@ exports.createProduct = async(req, res) => {
 
   let productImages = [];
 
-  if (req.files.length > 0) {
+  if (req.files && req.files.length > 0) {
     productImages = req.files.map((file) => ({img: file.filename}))
   }
 
@@ -30,7 +30,7 @@ exports.createProduct = async(req, res) => {
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({message: 'Something went wrong', error: error})
+    res.status(500).json({message: 'Something went wrong', error})
   }
 }
 
@@ -47,6 +47,40 @@ exports.deleteProduct = async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Something went wrong', error: error});
+    res.status(500).json({ message: 'Something went wrong', error});
   }
 };
+
+exports.updateProduct = async(req, res) => {
+  const {name, price, quantity, description, category, reviews} = req.body
+
+  let productImages = [];
+
+  if (req.files && req.files.length > 0) {
+    productImages = req.files.map((file) => ({ img: file.filename }));
+  }
+
+  const updatedFields = {
+    name,
+    price,
+    quantity,
+    description,
+    category,
+    productImages,
+    updatedAt: Date.now(),
+    reviews
+  };
+
+  try {
+    const updateProduct = await Product.findOneAndUpdate({ _id: req.body.productId }, updatedFields, { new: true });
+    
+    if(updateProduct){
+      res.status(200).json({message: 'Product successfully updated', product: updateProduct})
+    } else {
+      res.status(404).json({message: 'Product not found'})
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message: 'Something went wrong', error})
+  }
+}
