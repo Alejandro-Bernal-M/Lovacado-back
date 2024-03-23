@@ -2,13 +2,12 @@ const Product = require('../models/product');
 const slugify = require('slugify');
 const { v4: uuidv4 } = require('uuid');
 
-exports.createProduct = async(req, res) => {
-  const {name, price, quantity, description, category} = req.body
-
+exports.createProduct = async (req, res) => {
+  const { name, price, quantity, description, category } = req.body;
   let productImages = [];
 
   if (req.files && req.files.length > 0) {
-    productImages = req.files.map((file) => ({img: file.filename}))
+    productImages = req.files.map((file) => ({ img: file.filename }));
   }
 
   const product = new Product({
@@ -19,8 +18,8 @@ exports.createProduct = async(req, res) => {
     description,
     category,
     productImages,
-    createdBy: req.user._id
-  })
+    createdBy: req.user._id,
+  });
 
   try {
     const savedProduct = await product.save();
@@ -31,30 +30,28 @@ exports.createProduct = async(req, res) => {
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({message: 'Something went wrong', error})
+    return res.status(500).json({ message: 'Something went wrong', error });
   }
-}
+};
 
 exports.deleteProduct = async (req, res) => {
   const { productId } = req.body;
 
   try {
-    const product = await Product.findOneAndDelete({ _id: productId }); // Find and delete the product
+    const product = await Product.findOneAndDelete({ _id: productId });
 
-    if (product) {
-     return res.status(200).json({ message: 'Product successfully deleted', product });
-    } else {
-     return res.status(404).json({ message: 'Product not found' });
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
     }
+    return res.status(200).json({ message: 'Product successfully deleted', product });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Something went wrong', error});
+    return res.status(500).json({ message: 'Something went wrong', error });
   }
 };
 
-exports.updateProduct = async(req, res) => {
-  const {name, price, quantity, description, category, reviews} = req.body
-
+exports.updateProduct = async (req, res) => {
+  const { name, price, quantity, description, category, reviews } = req.body;
   let productImages = [];
 
   if (req.files && req.files.length > 0) {
@@ -69,46 +66,43 @@ exports.updateProduct = async(req, res) => {
     category,
     productImages,
     updatedAt: Date.now(),
-    reviews
+    reviews,
   };
 
   try {
     const updateProduct = await Product.findOneAndUpdate({ _id: req.body.productId }, updatedFields, { new: true });
-    
-    if(updateProduct){
-      return res.status(200).json({message: 'Product successfully updated', product: updateProduct})
-    } else {
-      return res.status(404).json({message: 'Product not found'})
+
+    if (!updateProduct) {
+      return res.status(404).json({ message: 'Product not found' });
     }
+    return res.status(200).json({ message: 'Product successfully updated', product: updateProduct });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({message: 'Something went wrong', error})
+    return res.status(500).json({ message: 'Something went wrong', error });
   }
-}
+};
 
-exports.addReviewToProject = async(req, res) => {
-  const {review, projectId} = req.body;
-
+exports.addReviewToProject = async (req, res) => {
+  const { review, projectId } = req.body;
   const reviewId = uuidv4();
 
   review.id = reviewId;
 
   try {
-    const project = await Project.findOne({id: projectId});
+    const project = await Project.findOne({ id: projectId });
 
-    if(!project){
-     return res.status(404).json({message: 'Project not found'})
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
     project.reviews.push(review);
     const savedProject = await project.save();
 
-    if(savedProject){
-      return res.status(200).json({message: 'Review succesfully added', project: savedProject});
-    } else {
-      return res.status(400).json({message: 'Error adding review'})
+    if (!savedProject) {
+      return res.status(400).json({ message: 'Error adding review' });
     }
+    return res.status(200).json({ message: 'Review successfully added', project: savedProject });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({message: 'Something went wrong', error})
+    return res.status(500).json({ message: 'Something went wrong', error });
   }
-}
+};
