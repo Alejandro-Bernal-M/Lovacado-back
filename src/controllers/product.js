@@ -25,13 +25,13 @@ exports.createProduct = async(req, res) => {
   try {
     const savedProduct = await product.save();
     if(savedProduct == product){
-      res.status(200).json({savedProduct});
+      return res.status(200).json({savedProduct});
     }else {
-      res.status(400).json({message: 'something went wrong saving the product'})
+      return res.status(400).json({message: 'something went wrong saving the product'})
     }
   } catch (error) {
-    console.log(error);
-    res.status(500).json({message: 'Something went wrong', error})
+    console.error(error);
+    return res.status(500).json({message: 'Something went wrong', error})
   }
 }
 
@@ -42,13 +42,13 @@ exports.deleteProduct = async (req, res) => {
     const product = await Product.findOneAndDelete({ _id: productId }); // Find and delete the product
 
     if (product) {
-      res.status(200).json({ message: 'Product successfully deleted', product });
+     return res.status(200).json({ message: 'Product successfully deleted', product });
     } else {
-      res.status(404).json({ message: 'Product not found' });
+     return res.status(404).json({ message: 'Product not found' });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Something went wrong', error});
+    return res.status(500).json({ message: 'Something went wrong', error});
   }
 };
 
@@ -76,13 +76,13 @@ exports.updateProduct = async(req, res) => {
     const updateProduct = await Product.findOneAndUpdate({ _id: req.body.productId }, updatedFields, { new: true });
     
     if(updateProduct){
-      res.status(200).json({message: 'Product successfully updated', product: updateProduct})
+      return res.status(200).json({message: 'Product successfully updated', product: updateProduct})
     } else {
-      res.status(404).json({message: 'Product not found'})
+      return res.status(404).json({message: 'Product not found'})
     }
   } catch (error) {
-    console.log(error);
-    res.status(500).json({message: 'Something went wrong', error})
+    console.error(error);
+    return res.status(500).json({message: 'Something went wrong', error})
   }
 }
 
@@ -103,12 +103,12 @@ exports.addReviewToProject = async(req, res) => {
     const savedProject = await project.save();
 
     if(savedProject){
-      res.status(200).json({message: 'Review succesfully added', project: savedProject});
+      return res.status(200).json({message: 'Review succesfully added', project: savedProject});
     } else {
-      res.status(400).json({message: 'Error adding review'})
+      return res.status(400).json({message: 'Error adding review'})
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({message: 'Something went wrong', error})
+    return res.status(500).json({message: 'Something went wrong', error})
   }
 }
