@@ -1,5 +1,6 @@
 const Product = require('../models/product');
 const slugify = require('slugify');
+const { v4: uuidv4 } = require('uuid');
 
 exports.createProduct = async(req, res) => {
   const {name, price, quantity, description, category} = req.body
@@ -81,6 +82,33 @@ exports.updateProduct = async(req, res) => {
     }
   } catch (error) {
     console.log(error);
+    res.status(500).json({message: 'Something went wrong', error})
+  }
+}
+
+exports.addReviewToProject = async(req, res) => {
+  const {review, projectId} = req.body;
+
+  const reviewId = uuidv4();
+
+  review.id = reviewId;
+
+  try {
+    const project = await Project.findOne({id: projectId});
+
+    if(!project){
+     return res.status(404).json({message: 'Project not found'})
+    }
+    project.reviews.push(review);
+    const savedProject = await project.save();
+
+    if(savedProject){
+      res.status(200).json({message: 'Review succesfully added', project: savedProject});
+    } else {
+      res.status(400).json({message: 'Error adding review'})
+    }
+  } catch (error) {
+    console.error(error);
     res.status(500).json({message: 'Something went wrong', error})
   }
 }
