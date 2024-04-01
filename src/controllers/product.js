@@ -49,6 +49,20 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+exports.getSpecificProducts = async (req, res) => {
+  try {
+    const product = await Product.findOne({_id: req.params.productId});
+    if(!product) {
+      return res.status(404).json({message: 'Error getting the product.'})
+    }
+
+    res.status(200).json({product})
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Something went wrong', error });
+  }
+}
+
 exports.deleteProduct = async (req, res) => {
   const { productId } = req.body;
 
