@@ -1,6 +1,21 @@
+const { trusted } = require('mongoose');
 const Product = require('../models/product');
 const slugify = require('slugify');
 const { v4: uuidv4 } = require('uuid');
+
+exports.getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find({});
+    if(!products) {
+      return res.status(404).json({message: 'Error getting the products.'})
+    }
+
+    res.status(200).json({products})
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Something went wrong', error });
+  }
+}
 
 exports.createProduct = async (req, res) => {
   const { name, price, quantity, description, category } = req.body;
@@ -82,7 +97,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-exports.addReviewToProject = async (req, res) => {
+exports.addReviewToProduct = async (req, res) => {
   const { review, projectId } = req.body;
   const reviewId = uuidv4();
 
