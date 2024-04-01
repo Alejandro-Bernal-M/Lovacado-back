@@ -41,7 +41,7 @@ exports.createProduct = async (req, res) => {
     if(savedProduct == product){
       return res.status(200).json({savedProduct});
     }else {
-      return res.status(400).json({message: 'something went wrong saving the product'})
+      return res.status(400).json({ message: 'something went wrong saving the product' })
     }
   } catch (error) {
     console.error(error);
@@ -53,7 +53,7 @@ exports.getSpecificProducts = async (req, res) => {
   try {
     const product = await Product.findOne({_id: req.params.productId});
     if(!product) {
-      return res.status(404).json({message: 'Error getting the product.'})
+      return res.status(404).json({ message: 'Error getting the product.' })
     }
 
     res.status(200).json({product})
