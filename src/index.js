@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const env = require('dotenv');
 const app = express();
+const path = require('path');
+const cors = require('cors');
 
 //routes
 const authRoutes = require('./routes/auth');
@@ -13,7 +15,25 @@ env.config();
 mongoose.connect(process.env.MONGO_URI).then(() => console.log('Db connected'));
 app.use(express.json());
 
+// files
+app.use('/public',express.static(path.join(__dirname, 'uploads')));
 
+// cors config
+var whitelist = ['http://example1.com', 'http://example2.com']
+var corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+}
+app.use(cors((corsOptions)))
+
+// routes
 app.use('/api', authRoutes);
 
 app.listen(process.env.PORT, () => {
