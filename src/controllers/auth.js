@@ -1,6 +1,6 @@
 const User = require('../models/user')
 const jwt = require('jsonwebtoken');
-
+const fs = require('fs');
 
 exports.signup = async (req, res) => {
   try {
@@ -8,6 +8,7 @@ exports.signup = async (req, res) => {
     const userFoundByUsername = await User.findOne({ username: req.body.username });
 
     if (userFoundByEmail || userFoundByUsername) {
+      fs.unlinkSync(req.file.path);
       return res.status(400).json({ message: 'User already exists' });
     } else {
       const { firstName, lastName, username, password, email, adminPassword, role } = req.body;
@@ -16,13 +17,15 @@ exports.signup = async (req, res) => {
         lastName,
         username,
         password,
-        email
+        email,
+        profileImage: req.file.filename
       });
 
       if (role) {
         if (adminPassword === process.env.ADMIN_PASSWORD) {
           newUser.role = role;
         } else {
+          fs.unlinkSync(req.file.path);
           return res.status(400).json({ message: "Wrong admin password" });
         }
       }
@@ -31,12 +34,14 @@ exports.signup = async (req, res) => {
       if (savedUser === newUser) {
         return res.json({ user: savedUser });
       } else {
+        fs.unlinkSync(req.file.path);
         return res.status(400).json({ message: 'Error saving the user' });
       }
     }
   } catch (error) {
     console.log(error);
     console.error(error.errors);
+    fs.unlinkSync(req.file.path);
     return res.status(400).json({ message: 'Something went wrong', errors: error.errors });
   }
 };

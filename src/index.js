@@ -14,14 +14,18 @@ env.config();
 //database conection
 mongoose.connect(process.env.MONGO_URI).then(() => console.log('Db connected'));
 app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 // files
 app.use('/public',express.static(path.join(__dirname, 'uploads')));
 
 // cors config
-var whitelist = ['http://example1.com', 'http://example2.com']
+var whitelist = ['http://localhost:3000/', 'http://example2.com']
 var corsOptions = {
   origin: function (origin, callback) {
+    if(!origin){//for bypassing postman req with  no origin
+      return callback(null, true);
+    }
     if (whitelist.indexOf(origin) !== -1) {
       callback(null, true)
     } else {
