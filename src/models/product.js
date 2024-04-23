@@ -40,7 +40,8 @@ const ProductSchema = mongoose.Schema({
       review: {
         type: String,
         min: 3
-      }
+      },
+      id: String
     }
   ],
   category: {
