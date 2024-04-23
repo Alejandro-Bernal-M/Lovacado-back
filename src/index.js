@@ -20,7 +20,7 @@ app.use(express.urlencoded({extended: true}));
 app.use('/public',express.static(path.join(__dirname, 'uploads')));
 
 // cors config
-var whitelist = ['http://localhost:3000/', 'http://example2.com']
+var whitelist = ['http://localhost:3000', 'http://example2.com']
 var corsOptions = {
   origin: function (origin, callback) {
     if(!origin){//for bypassing postman req with  no origin
