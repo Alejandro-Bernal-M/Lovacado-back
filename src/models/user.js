@@ -22,6 +22,10 @@ const UserSchema = mongoose.Schema({
     required: true,
     trim: true
   },
+  hashPassword:{
+    type: String,
+    required: true
+  },
   username: {
     type: String,
     required: true,
