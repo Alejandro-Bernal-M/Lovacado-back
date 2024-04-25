@@ -18,8 +18,11 @@ exports.signup = async (req, res) => {
         username,
         password,
         email,
-        profileImage: req.file.filename
       });
+
+      if(req.file){
+        newUser.profileImage = req.file.filename
+      }
 
       if (role) {
         if (adminPassword === process.env.ADMIN_PASSWORD) {
@@ -32,7 +35,8 @@ exports.signup = async (req, res) => {
 
       const savedUser = await newUser.save();
       if (savedUser === newUser) {
-        return res.json({ user: savedUser });
+        const token = jwt.sign({ _id: savedUser._id, role: savedUser.role }, process.env.JWT_SECRET, { expiresIn: '2h' });
+        return res.json({token, user: savedUser });
       } else {
         fs.unlinkSync(req.file.path);
         return res.status(400).json({ message: 'Error saving the user' });
