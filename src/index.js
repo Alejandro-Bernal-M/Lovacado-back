@@ -7,6 +7,7 @@ const cors = require('cors');
 
 //routes
 const authRoutes = require('./routes/auth');
+const productRoutes = require('./routes/product');
 
 //env
 env.config();
@@ -39,6 +40,7 @@ app.use(cors((corsOptions)))
 
 // routes
 app.use('/api', authRoutes);
+app.use('/api', productRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(`application running on Port: ${process.env.PORT}`)
