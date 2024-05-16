@@ -1,13 +1,14 @@
 const jwt = require('jsonwebtoken');
 
 exports.requireSignin = async (req, res, next) => {
+  console.log(req.headers)
   if (req.headers.authorization) {
     const token = req.headers.authorization.split(' ')[1];
 
     try {
       const user = jwt.verify(token, process.env.JWT_SECRET);
       req.user = user;
-      next();
+      return next();
       
     } catch (error) {
       console.log(error);
@@ -19,7 +20,8 @@ exports.requireSignin = async (req, res, next) => {
 
 exports.requireAdmin = async (req, res, next) => {
   if ( req.user.role === 'admin') {
-    next();
+    console.log('admin', req)
+    return next();
   } else {
     return res.status(400).json({ message: 'Admin access denied' });
   }
