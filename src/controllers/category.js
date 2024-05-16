@@ -21,6 +21,7 @@ function createCategories(categories, parentId = null) {
       _id: cat._id,
       name: cat.name,
       slug: cat.slug,
+      categoryImage: cat.categoryImage,
       children: createCategories(categories, cat._id) // Recursively call createCategories for children
     });
   });
@@ -30,6 +31,7 @@ function createCategories(categories, parentId = null) {
 
 // Controller function to create a new category
 exports.createCategory = async (req, res) => {
+  console.log('body', req.body)
   const categoryObj = {
     name: req.body.name,
     slug: slugify(req.body.name)
@@ -37,7 +39,7 @@ exports.createCategory = async (req, res) => {
 
   // If request contains a file, add its path to category object
   if (req.file) {
-    categoryObj.categoryImage = process.env.API + '/public/' + req.file.filename;
+    categoryObj.categoryImage = req.file.filename;
   }
 
   // If parentId is provided in request body, add it to category object
@@ -61,7 +63,7 @@ exports.createCategory = async (req, res) => {
 };
 
 // Controller function to fetch all categories
-exports.getCategories = async (req, res) => {
+exports.getAllCategories = async (req, res) => {
   try {
     const categories = await Category.find({});
     if (categories) {
@@ -72,5 +74,52 @@ exports.getCategories = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(400).json({ message: 'Error fetching categories', error: error });
+  }
+};
+
+// Controller function to update categories
+exports.updateCategory = async (req, res) => {
+  const { _id, name, parentId } = req.body;
+  const categoryObj = { name, parentId };
+  if(req.file){
+    categoryObj.categoryImage = req.file.filename;
+  }
+
+  try {
+    const updatedCategory = await Category.findOneAndUpdate(
+      { _id },
+      categoryObj,
+      { new: true }
+    );
+
+    if (updatedCategory) {
+      res.status(200).json({ updatedCategory });
+    } else {
+      res.status(400).json({ message: 'Error updating category' });
+    }
+  }
+  catch (error) {
+    console.error(error);
+    res.status(400).json({ message: 'Something went wrong', error: error });
+  }
+
+};
+
+// Controller function to delete categories
+
+exports.deleteCategory = async (req, res) => {  
+  const { _id } = req.params;
+
+  try {
+    const deletedCategory = await Category.findOneAndDelete({ _id });
+
+    if (deletedCategory) {
+      res.status(200).json({ message: 'Category deleted successfully' });
+    } else {
+      res.status(400).json({ message: 'Error deleting category' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ message: 'Something went wrong', error: error });
   }
 };
