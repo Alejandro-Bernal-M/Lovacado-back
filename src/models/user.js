@@ -60,4 +60,8 @@ UserSchema.methods = {
   }
 }
 
+
+UserSchema.set('toJSON', { virtuals: true });
+UserSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('User', UserSchema);
