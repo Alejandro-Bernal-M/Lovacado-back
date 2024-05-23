@@ -1,15 +1,18 @@
-const { trusted } = require('mongoose');
+const User = require('../models/user');
 const Product = require('../models/product');
 const slugify = require('slugify');
 const { v4: uuidv4 } = require('uuid');
 
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({});
+    const products = await Product.find({}).populate({
+      path: 'createdBy',
+      select: 'firstName lastName fullName' // Include the virtual fullName
+    });
     if(!products) {
       return res.status(404).json({message: 'Error getting the products.'})
     }
-
+    
     res.status(200).json({products})
   } catch (error) {
     console.error(error);
@@ -18,6 +21,10 @@ exports.getAllProducts = async (req, res) => {
 }
 
 exports.createProduct = async (req, res) => {
+  console.log('body', req.body)
+  if (req.body === null || req.body === undefined || req.body.size === 0) {
+    return res.status(400).json({ message: 'Please fill all required fields' });
+  }
   const { name, price, quantity, description, category } = req.body;
   let productImages = [];
 
@@ -38,8 +45,13 @@ exports.createProduct = async (req, res) => {
 
   try {
     const savedProduct = await product.save();
+    const savedProductWithUser = await savedProduct.populate({
+      path: 'createdBy',
+      select: 'firstName lastName fullName' // Include the virtual fullName
+    });
+
     if(savedProduct == product){
-      return res.status(200).json({savedProduct});
+      return res.status(200).json({savedProduct: savedProductWithUser});
     }else {
       return res.status(400).json({ message: 'something went wrong saving the product' })
     }
@@ -51,7 +63,10 @@ exports.createProduct = async (req, res) => {
 
 exports.getSpecificProducts = async (req, res) => {
   try {
-    const product = await Product.findOne({_id: req.params.productId});
+    const product = await Product.findOne({_id: req.params.productId}).populate({
+      path: 'createdBy',
+      select: 'firstName lastName fullName' // Include the virtual fullName
+    });
     if(!product) {
       return res.status(404).json({ message: 'Error getting the product.' })
     }
@@ -99,7 +114,10 @@ exports.updateProduct = async (req, res) => {
   };
 
   try {
-    const updateProduct = await Product.findOneAndUpdate({ _id: req.body.productId }, updatedFields, { new: true });
+    const updateProduct = await Product.findOneAndUpdate({ _id: req.body.productId }, updatedFields, { new: true }).populate({
+      path: 'createdBy',
+      select: 'firstName lastName fullName' // Include the virtual fullName
+      });
 
     if (!updateProduct) {
       return res.status(404).json({ message: 'Product not found' });
