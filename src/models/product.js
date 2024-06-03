@@ -25,7 +25,11 @@ const ProductSchema = mongoose.Schema({
     required: true,
     trim: true
   },
-  offer: Number,
+  offer: {
+    type: Number,
+    min: 0,
+    max: 100
+  },
   productImages: [
     {
       img: String
