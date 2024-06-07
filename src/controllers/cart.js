@@ -1,18 +1,46 @@
 const Cart = require('../models/cart');
+const Product = require('../models/product');
 
 exports.addItemToCart = async (req, res) => {
   try {
-    let cart = await Cart.findOne({ user: req.user._id });
+    const cart = await Cart.findOne({ user: req.user._id });
 
     if (cart) {
-      const product = req.body.cartItems.product;
-      const item = cart.cartItems.find(item => item.product.toString() === product.toString());
+      const item = req.body.cartItem;
+      const product = await Product.findById(item._id);
 
-      if (item) {
-        item.quantity += req.body.cartItems.quantity;
-        item.price += req.body.cartItems.price;
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      const quantity = item.quantity;
+      const stock = product.quantity;
+      const price = product.price;
+      const offer = product.offer;
+      let discountedPrice;
+      if(offer ){
+        discountedPrice = price - (price * offer / 100);
+      }else {
+        discountedPrice = price;
+      }
+
+      if (stock < quantity) {
+        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+      }
+
+      const itemIndex = cart.cartItems.findIndex(cartItem => cartItem.product.toString() === item._id.toString());
+
+      if (itemIndex !== -1) {
+        cart.cartItems[itemIndex].quantity += quantity;
+        cart.cartItems[itemIndex].price = discountedPrice;
+        cart.cartItems[itemIndex].offer = offer;
       } else {
-        cart.cartItems.push(req.body.cartItems);
+        cart.cartItems.push({
+          product: item._id,
+          price: discountedPrice,
+          quantity: quantity,
+          offer: offer
+        });
       }
 
       const updatedCart = await cart.save();
@@ -22,17 +50,40 @@ exports.addItemToCart = async (req, res) => {
         return res.status(400).json({ message: "Error saving the cart" });
       }
     } else {
+      const item = req.body.cartItem;
+      const product = await Product.findById(item._id);
+
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      const quantity = item.quantity;
+      const stock = product.quantity;
+      const price = product.price;
+      const offer = product.offer;
+      let discountedPrice;
+      if(offer ){
+        discountedPrice = price - (price * offer / 100);
+      }else {
+        discountedPrice = price;
+      }
+
+      if (stock < quantity) {
+        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+      }
+
       const newCart = new Cart({
         user: req.user._id,
-        cartItems: [req.body.cartItems]
+        cartItems: [{
+          product: item._id,
+          price: discountedPrice,
+          quantity: quantity,
+          offer: offer
+        }]
       });
 
       const savedCart = await newCart.save();
-      if(savedCart == newCart){
-        return res.status(200).json({ savedCart });
-      } else {
-        return res.status(400).json({ message: "Error saving the cart" });
-      }
+      return res.status(200).json({ savedCart });
     }
   } catch (error) {
     console.error(error);
@@ -93,8 +144,7 @@ exports.checkProductsForCheckout = async (req, res) => {
     }
 
     let total = 0;
-
-    items.forEach(async item => {
+    for (const item of items) {
       const product = await Product.findById(item._id);
       if (!product) {
         return res.status(404).json({ message: 'Product not found', checkStatus: false });
@@ -103,17 +153,22 @@ exports.checkProductsForCheckout = async (req, res) => {
       const stock = product.quantity;
       const price = product.price;
       const offer = product.offer;
-      const discountedPrice = price - (price * offer / 100);
-
-      if (stock < quantity) {
-        return res.status(400).json({ message: 'Insufficient stock for ' + product.name, checkStatus: false });
+      let discountedPrice;
+      if(offer ){
+        discountedPrice = price - (price * offer / 100);
+      }else {
+        discountedPrice = price;
       }
-
+        
+      if (stock < quantity) {
+        return res.status(400).json({ message: `Insufficient stock for ${product.name}`, checkStatus: false });
+      }
+        
       total += discountedPrice * quantity;
-    })
+    }
 
     if (total !== totalAmount) {
-      return res.status(400).json({ message: 'Total amount mismatch', checkStatus: false });
+      return res.status(400).json({ message: 'Total amount mismatch', checkStatus: false, totalAmount: total, itemsAmount: totalAmount});
     }
 
     return res.status(200).json({ message: 'Products are ready for checkout', checkStatus: true });
@@ -121,5 +176,34 @@ exports.checkProductsForCheckout = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: error, message: 'Error checking products for checkout' });
+  }
+}
+
+exports.getCartItems = async (req, res) => {
+  try {
+    const cart = await Cart.findOne({ user: req.user._id }).populate('cartItems.product', 'name price productImages');
+
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
+    return res.status(200).json({ cartItems: cart.cartItems });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: error, message: 'Error getting cart items' });
+  }
+}
+
+exports.saveCart = async (req, res) => {
+  try {
+    const cart = await Cart.findOrCreate({ user: req.user._id });
+    cart.cartItems = req.body.cartItems;
+
+    const updatedCart = await cart.save();
+    return res.status(200).json({ updatedCart });
+  }
+  catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: error, message: 'Error saving cart' });
   }
 }
