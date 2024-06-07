@@ -9,6 +9,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/product');
 const categoryRoutes = require('./routes/category');
+const cartRoutes = require('./routes/cart');
 
 //env
 env.config();
@@ -43,6 +44,7 @@ app.use(cors((corsOptions)))
 app.use('/api', authRoutes);
 app.use('/api', productRoutes);
 app.use('/api', categoryRoutes);
+app.use('/api', cartRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(`application running on Port: ${process.env.PORT}`)
