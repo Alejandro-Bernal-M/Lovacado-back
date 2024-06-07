@@ -187,7 +187,16 @@ exports.getCartItems = async (req, res) => {
       return res.status(404).json({ message: 'Cart not found' });
     }
 
-    return res.status(200).json({ cartItems: cart.cartItems });
+    const cartItems = cart.cartItems.map(item => {
+      return {
+        _id: item.product._id,
+        price: item.price,
+        quantity: item.quantity,
+        offer: item.offer,
+      }
+    });
+
+    return res.status(200).json({ cartItems: cartItems });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: error, message: 'Error getting cart items' });
