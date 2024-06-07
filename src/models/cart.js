@@ -20,6 +20,9 @@ const CartSchema = mongoose.Schema({
       quantity: {
         type: Number,
         default: 1
+      },
+      offer: {
+        type: Number
       }
     }
   ]
