@@ -216,3 +216,51 @@ exports.saveCart = async (req, res) => {
     return res.status(500).json({ error: error, message: 'Error saving cart' });
   }
 }
+
+exports.subtractQuantity = async (req, res) => {
+  try {
+    const cart = await Cart.findOne({ user: req.user._id });
+    const productId = req.body.productId;
+    const product = await Product.findById(productId);
+    const quantityToSubstract = req.body.quantity;
+
+    if (!cart) {
+      return res.status(404).json({ message: 'Cart not found' });
+    }
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const productIndex = cart.cartItems.findIndex(item => item.product.toString() === product._id.toString());
+
+    if (productIndex === -1) {
+      return res.status(404).json({ message: 'Product not found in cart' });
+    }
+
+    const newQuantity = cart.cartItems[productIndex].quantity -= quantityToSubstract;
+
+    if (newQuantity === 0) {
+      cart.cartItems.splice(productIndex, 1);
+    } else {
+      cart.cartItems[productIndex].quantity = newQuantity;
+    }
+
+    const updatedCart = await cart.save();
+
+    const newCartItems = updatedCart.cartItems.map(item => {
+      return {
+        _id: item.product._id,
+        quantity: item.quantity,
+        price: item.price,
+        offer: item.offer
+      }
+    });
+
+    return res.status(200).json({ cartItems: newCartItems });
+  }
+  catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: error, message: 'Error substracting quantity' });
+  }
+}
