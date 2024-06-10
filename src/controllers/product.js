@@ -120,14 +120,24 @@ exports.updateProduct = async (req, res) => {
   };
 
   try {
+    const product = await Product.findOne({ _id: req.body.productId });
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    if(productImages.length === 0){
+      updatedFields.productImages = product.productImages;
+    }
+
     const updateProduct = await Product.findOneAndUpdate({ _id: req.body.productId }, updatedFields, { new: true }).populate({
       path: 'createdBy',
       select: 'firstName lastName fullName' // Include the virtual fullName
       });
 
     if (!updateProduct) {
-      return res.status(404).json({ message: 'Product not found' });
+      return res.status(400).json({ message: 'Error updating product' });
     }
+
     return res.status(200).json({ message: 'Product successfully updated', product: updateProduct });
   } catch (error) {
     console.error(error);
