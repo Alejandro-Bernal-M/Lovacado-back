@@ -2,6 +2,8 @@ const User = require('../models/user');
 const Product = require('../models/product');
 const slugify = require('slugify');
 const { v4: uuidv4 } = require('uuid');
+const path = require('path');
+const fs = require('fs');
 
 exports.getAllProducts = async (req, res) => {
   try {
@@ -100,9 +102,8 @@ exports.deleteProduct = async (req, res) => {
 };
 
 exports.updateProduct = async (req, res) => {
-  const { name, price, quantity, description, category, reviews, offer } = req.body;
+  const { name, price, quantity, description, category, reviews, offer, imagesToDeleteIds, imagesToDelete } = req.body;
   let productImages = [];
-
   if (req.files && req.files.length > 0) {
     productImages = req.files.map((file) => ({ img: file.filename }));
   }
@@ -124,10 +125,30 @@ exports.updateProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
+    let filteredImages
 
-    if(productImages.length === 0){
-      updatedFields.productImages = product.productImages;
+    if(imagesToDeleteIds.length > 0) {
+      filteredImages = product.productImages.filter((image) => !imagesToDeleteIds.includes(image._id));
+    }else {
+      filteredImages = product.productImages
     }
+    
+    let imagesToDeleteParsed = JSON.parse(imagesToDelete);
+
+    if (imagesToDeleteParsed.length > 0) {
+      for (let i = 0; i < imagesToDeleteParsed.length; i++) {
+        const image = imagesToDeleteParsed[i];
+        const imagePath = path.join(path.dirname(__dirname), 'uploads', image.img);
+        fs.unlink(imagePath, (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ message: 'Something went wrong', error: err });
+          }
+        });
+      }
+    }
+
+    updatedFields.productImages = [...filteredImages, ...productImages];
 
     const updateProduct = await Product.findOneAndUpdate({ _id: req.body.productId }, updatedFields, { new: true }).populate({
       path: 'createdBy',
