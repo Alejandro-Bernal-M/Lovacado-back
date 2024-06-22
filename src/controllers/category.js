@@ -24,6 +24,7 @@ function createCategories(categories, parentId = null) {
       name: cat.name,
       slug: cat.slug,
       categoryImage: cat.categoryImage,
+      parentId: cat.parentId,
       children: createCategories(categories, cat._id) // Recursively call createCategories for children
     });
   });
@@ -47,6 +48,8 @@ exports.createCategory = async (req, res) => {
   // If parentId is provided in request body, add it to category object
   if (req.body.parentId) {
     categoryObj.parentId = req.body.parentId;
+  } else {
+    categoryObj.parentId = "";
   }
 
   const newCategory = new Category(categoryObj);
@@ -132,12 +135,12 @@ exports.deleteCategory = async (req, res) => {
   const { id } = req.params;
 
   try {
-    console.log('id', id)
     const category = await Category.findOne({_id: id});
-    console.log('category', category)
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
+
+    //delete the image from the uploads folder
     const imagePath = path.join(path.dirname(__dirname), 'uploads', category.categoryImage);
     fs.unlink(imagePath , (err  => {
       if (err) {
@@ -147,11 +150,24 @@ exports.deleteCategory = async (req, res) => {
       console.log('Image deleted successfully');
     }
     ));
+
+    // reassign the parentId of the child categories to be undefined
+    const updatedCategories = await Category.updateMany(
+      {
+        parentId: id
+      },
+      {
+        $set: {parentId: null}
+      }
+    );
+
     const deletedCategory = await Category.findOneAndDelete({ _id: id });
+    const categories = await Category.find({});
+    let categoryList = createCategories(categories);
 
 
     if (deletedCategory) {
-      res.status(200).json({ message: 'Category deleted successfully', deletedCategory });
+      res.status(200).json({ message: 'Category deleted successfully', updatedCategories: categoryList});
     } else {
       res.status(400).json({ message: 'Error deleting category' });
     }
