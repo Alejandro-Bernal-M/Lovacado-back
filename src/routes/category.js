@@ -19,7 +19,7 @@ const upload = multer({ storage: storage })
 
 router.get('/categories', getAllCategories);
 router.post('/categories', requireSignin, requireAdmin, upload.single('categoryImage'), createCategory);
-router.patch('/categories/:id', requireSignin, requireAdmin, updateCategory);
+router.put('/categories/:id', requireSignin, requireAdmin,upload.single('categoryImage'), updateCategory);
 router.delete('/categories/:id', requireSignin, requireAdmin, deleteCategory);
 
 module.exports = router;
