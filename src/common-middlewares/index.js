@@ -16,7 +16,7 @@ exports.requireSignin = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid token' });
     }
   }
-  return res.status(400).json({ message: 'Authorization required' });
+  return res.status(401).json({ message: 'Authorization required' });
 }
 
 exports.requireAdmin = async (req, res, next) => {
@@ -24,6 +24,6 @@ exports.requireAdmin = async (req, res, next) => {
     console.log('admin', req)
     return next();
   } else {
-    return res.status(400).json({ message: 'Admin access denied' });
+    return res.status(401).json({ message: 'Admin access denied' });
   }
 }
