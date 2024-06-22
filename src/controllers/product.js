@@ -94,15 +94,35 @@ exports.getSpecificProducts = async (req, res) => {
 }
 
 exports.deleteProduct = async (req, res) => {
-  const { productId } = req.body;
+  const { productId } = req.params;
 
   try {
-    const product = await Product.findOneAndDelete({ _id: productId });
-
+    const product = await Product.findOne({ _id: productId });
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
-    return res.status(200).json({ message: 'Product successfully deleted', product });
+
+    const images = product.productImages;
+    if (images.length > 0) {
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        const imagePath = path.join(path.dirname(__dirname), 'uploads', image.img);
+        fs.unlink(imagePath, (err) => {
+          if (err) {
+            console.error(err);
+            return res.status(500).json({ message: 'Something went wrong', error: err });
+          }
+        }
+        );
+      }
+    }
+
+    const productDeleted = await Product.findOneAndDelete({ _id: productId });
+    
+    if (!productDeleted) {
+      return res.status(400).json({ message: 'Error deleting product' });
+    }
+    return res.status(200).json({ message: 'Product successfully deleted', product: productDeleted });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Something went wrong', error });
