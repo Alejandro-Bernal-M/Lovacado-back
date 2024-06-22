@@ -1,5 +1,7 @@
 const Category = require('../models/category');
 const slugify = require('slugify');
+const fs = require('fs');
+const path = require('path');
 
 // Recursive function to create nested category list
 function createCategories(categories, parentId = null) {
@@ -7,8 +9,8 @@ function createCategories(categories, parentId = null) {
   let category;
 
   // If parentId is null, filter top-level categories
-  if (parentId === null) {
-    category = categories.filter(cat => cat.parentId == undefined);
+  if (parentId === null || parentId === undefined || parentId === '') {
+    category = categories.filter(cat => cat.parentId == undefined || cat.parentId == '' || cat.parentId == null);
   } else {
     // Otherwise, filter categories with matching parentId
     category = categories.filter(cat => cat.parentId == parentId);
@@ -79,6 +81,7 @@ exports.getAllCategories = async (req, res) => {
 
 // Controller function to update categories
 exports.updateCategory = async (req, res) => {
+  console.log('called updated category', req.body)
   const { _id, name, parentId } = req.body;
   const categoryObj = { name, parentId };
   if(req.file){
@@ -86,11 +89,29 @@ exports.updateCategory = async (req, res) => {
   }
 
   try {
+    // delete the old image if a new image is uploaded
+    if (req.file) {
+      const category = await Category.findOne({
+        _id
+      });
+      const oldImage = category.categoryImage;
+      const imagePath = path.join(path.dirname(__dirname), 'uploads', oldImage);
+      fs.unlink(imagePath , (err  => {
+        if (err) {
+          console.error(err);
+          return;
+        }
+        console.log('Image deleted successfully');
+      }
+      ));
+    }
+    
     const updatedCategory = await Category.findOneAndUpdate(
       { _id },
       categoryObj,
       { new: true }
     );
+    
 
     if (updatedCategory) {
       res.status(200).json({ updatedCategory });
