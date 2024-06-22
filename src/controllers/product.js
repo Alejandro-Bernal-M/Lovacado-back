@@ -52,19 +52,21 @@ exports.createProduct = async (req, res) => {
 
   try {
     const savedProduct = await product.save();
-    const savedProductWithUser = await savedProduct.populate({
+    const savedProductWithPopulations = await Product.findById(savedProduct._id)
+    .populate({
       path: 'createdBy',
-      select: 'firstName lastName fullName' // Include the virtual fullName
-    }).populate({
+      select: 'firstName lastName fullName'
+    })
+    .populate({
       path: 'category',
       select: 'name _id'
-    });
+    })
+    .exec();
 
-    if(savedProduct == product){
-      return res.status(200).json({savedProduct: savedProductWithUser});
-    }else {
-      return res.status(400).json({ message: 'something went wrong saving the product' })
+    if (!savedProductWithPopulations) {
+      return res.status(404).json({ message: 'Product not found after save' });
     }
+    res.status(200).json({ savedProduct: savedProductWithPopulations });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Something went wrong', error });
@@ -79,7 +81,7 @@ exports.getSpecificProducts = async (req, res) => {
     }).populate({
       path: 'category',
       select: 'name _id'
-    });
+    }).exec();
     if(!product) {
       return res.status(404).json({ message: 'Error getting the product.' })
     }
@@ -162,7 +164,7 @@ exports.updateProduct = async (req, res) => {
       }).populate({
         path: 'category',
         select: 'name _id'
-      });
+      }).exec();;
 
     if (!updateProduct) {
       return res.status(400).json({ message: 'Error updating product' });
