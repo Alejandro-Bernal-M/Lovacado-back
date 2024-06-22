@@ -129,13 +129,29 @@ exports.updateCategory = async (req, res) => {
 // Controller function to delete categories
 
 exports.deleteCategory = async (req, res) => {  
-  const { _id } = req.params;
+  const { id } = req.params;
 
   try {
-    const deletedCategory = await Category.findOneAndDelete({ _id });
+    console.log('id', id)
+    const category = await Category.findOne({_id: id});
+    console.log('category', category)
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    const imagePath = path.join(path.dirname(__dirname), 'uploads', category.categoryImage);
+    fs.unlink(imagePath , (err  => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log('Image deleted successfully');
+    }
+    ));
+    const deletedCategory = await Category.findOneAndDelete({ _id: id });
+
 
     if (deletedCategory) {
-      res.status(200).json({ message: 'Category deleted successfully' });
+      res.status(200).json({ message: 'Category deleted successfully', deletedCategory });
     } else {
       res.status(400).json({ message: 'Error deleting category' });
     }
