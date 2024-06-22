@@ -55,6 +55,9 @@ exports.createProduct = async (req, res) => {
     const savedProductWithUser = await savedProduct.populate({
       path: 'createdBy',
       select: 'firstName lastName fullName' // Include the virtual fullName
+    }).populate({
+      path: 'category',
+      select: 'name _id'
     });
 
     if(savedProduct == product){
@@ -73,6 +76,9 @@ exports.getSpecificProducts = async (req, res) => {
     const product = await Product.findOne({_id: req.params.productId}).populate({
       path: 'createdBy',
       select: 'firstName lastName fullName' // Include the virtual fullName
+    }).populate({
+      path: 'category',
+      select: 'name _id'
     });
     if(!product) {
       return res.status(404).json({ message: 'Error getting the product.' })
@@ -153,6 +159,9 @@ exports.updateProduct = async (req, res) => {
     const updateProduct = await Product.findOneAndUpdate({ _id: req.body.productId }, updatedFields, { new: true }).populate({
       path: 'createdBy',
       select: 'firstName lastName fullName' // Include the virtual fullName
+      }).populate({
+        path: 'category',
+        select: 'name _id'
       });
 
     if (!updateProduct) {
