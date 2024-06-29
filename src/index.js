@@ -11,6 +11,7 @@ const productRoutes = require('./routes/product');
 const categoryRoutes = require('./routes/category');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/order');
+const stripeRoutes = require('./routes/stripe');
 
 //env
 env.config();
@@ -47,6 +48,7 @@ app.use('/api', productRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', cartRoutes);
 app.use('/api', orderRoutes);
+app.use('/api', stripeRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(`application running on Port: ${process.env.PORT}`)
