@@ -50,10 +50,6 @@ const OrderSchema = mongoose.Schema({
       type: String,
     },
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
 }, {timestamps: true});
 
 module.exports = mongoose.model('Order', OrderSchema);
