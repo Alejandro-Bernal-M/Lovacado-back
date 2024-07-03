@@ -5,7 +5,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET);
 
 exports.createSession = async (req, res) => {
   const { items } = req.body;
-  console.log('items', items);
   if (!items) {
     return res.status(400).json({ message: 'Items are required' });
   }
@@ -34,7 +33,6 @@ exports.createSession = async (req, res) => {
       };
     }
   ));
-  console.log('line_items', line_items[0].price_data.product_data);
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -51,4 +49,55 @@ exports.createSession = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong', error });
   }
 }
+
+function fulfillOrder(lineItems) {
+  console.log('Fulfilling order', lineItems);
+}
+
+exports.handleWebhook = async (req, res) => {
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
+  console.log('endpointSecret', endpointSecret)
+  const payload = req.body;
+  const sig = req.headers['stripe-signature'];
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object;
+        console.log('Checkout session completed:', session);
+        // Retrieve the session. If you require line items in the response, you may include them by expanding line_items.
+        const sessionWithLineItems = await stripe.checkout.sessions.retrieve(
+          event.data.object.id,
+          {
+            expand: ['line_items'],
+          }
+        );
+        const lineItems = sessionWithLineItems.line_items;
+    
+        // Fulfill the purchase...
+        fulfillOrder(lineItems);
+
+        break;
+      // Add other event handlers as needed
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Webhook error:', error.message);
+    return res.status(400).json({ message: 'Webhook error', error: error.message });
+  }
+
+  // if (event.type === 'checkout.session.completed') {
+  //   const session = event.data.object;
+  //   console.log('session', session);
+  //   // Do something with session
+  // }
+
+  // res.json({ received: true });
+}
+
 

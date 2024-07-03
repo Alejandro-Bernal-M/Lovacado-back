@@ -4,6 +4,8 @@ const env = require('dotenv');
 const app = express();
 const path = require('path');
 const cors = require('cors');
+const { handleWebhook } = require('./controllers/stripe');
+const bodyParser = require('body-parser');
 
 //routes
 const authRoutes = require('./routes/auth');
@@ -15,14 +17,6 @@ const stripeRoutes = require('./routes/stripe');
 
 //env
 env.config();
-
-//database conection
-mongoose.connect(process.env.MONGO_URI).then(() => console.log('Db connected'));
-app.use(express.json());
-app.use(express.urlencoded({extended: true}));
-
-// files
-app.use('/public',express.static(path.join(__dirname, 'uploads')));
 
 // cors config
 var whitelist = ['http://localhost:3000', 'http://example2.com']
@@ -41,6 +35,19 @@ var corsOptions = {
   credentials: true,
 }
 app.use(cors((corsOptions)))
+
+//stripe webhook
+app.post('/webhook', express.raw({type: 'application/json'}), handleWebhook);
+
+//database conection
+mongoose.connect(process.env.MONGO_URI).then(() => console.log('Db connected'));
+
+app.use(express.urlencoded({extended: true}));
+app.use(express.json());
+
+// files
+app.use('/public',express.static(path.join(__dirname, 'uploads')));
+
 
 // routes
 app.use('/api', authRoutes);
