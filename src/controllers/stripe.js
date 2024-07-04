@@ -2,9 +2,12 @@ const Product = require('../models/product');
 const dotenv = require('dotenv');
 dotenv.config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET);
+const TempOrder = require('../models/tempOrder');
+const Order = require('../models/order');
 
 exports.createSession = async (req, res) => {
-  const { items } = req.body;
+  const { items, userId } = req.body;
+
   if (!items) {
     return res.status(400).json({ message: 'Items are required' });
   }
@@ -40,8 +43,25 @@ exports.createSession = async (req, res) => {
       line_items,
       mode: 'payment',
       success_url: process.env.STRIPE_SUCCESS_URL,
-      cancel_url: process.env.STRIPE_CANCEL_URL
+      cancel_url: process.env.STRIPE_CANCEL_URL,
+      expires_at: Math.floor(Date.now() / 1000) + 60 * 30, // 30 minutes
+      shipping_address_collection: {
+        allowed_countries: ['US', 'CA'], // Specify countries where shipping is allowed
+      },
     });
+
+    const tempOrder= await TempOrder.create({
+      stripeSessionId: session.id,
+      products: items.map(item => ({
+        product: item._id,
+        quantity: item.quantity,
+      })),
+    });
+
+    if(userId) {
+      tempOrder.user = userId;
+      await tempOrder.save();
+    }
 
     res.status(200).json({ session });
   } catch (error) {
@@ -50,8 +70,44 @@ exports.createSession = async (req, res) => {
   }
 }
 
-function fulfillOrder(lineItems) {
-  console.log('Fulfilling order', lineItems);
+async function fulfillOrder(session) {
+  console.log('Fulfilling order', session);
+  const tempOrder = await TempOrder.findOne({ stripeSessionId: session.id });
+  if(!tempOrder) {
+    return;
+  }
+
+  const order = await Order.create({
+    user: tempOrder.user,
+    products: tempOrder.products,
+    totalAmount: session.amount_total / 100,
+    paymentStatus: 'Paid',
+    paymentType: 'Stripe',
+    paymentInfo: {
+      id: session.payment_intent,
+      status: session.payment_status,
+    },
+    address: session.shipping_details.address,
+    email: session.customer_details.email,
+    name: session.customer_details.name,
+  });
+
+  await TempOrder.deleteOne({ stripeSessionId: session.id });
+
+  console.log('Order fulfilled', order);
+
+}
+
+async function deleteTempOrder(session) {
+  console.log('Deleting temp order', session);
+  const tempOrder = await TempOrder.findOne({ stripeSessionId: session.id });
+  if(!tempOrder) {
+    return;
+  }
+
+  await TempOrder.deleteOne({ stripeSessionId: session.id });
+
+  console.log('Temp order deleted', tempOrder);
 }
 
 exports.handleWebhook = async (req, res) => {
@@ -63,25 +119,30 @@ exports.handleWebhook = async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
+    const session = event.data.object;
     switch (event.type) {
       case 'checkout.session.completed':
-        const session = event.data.object;
         console.log('Checkout session completed:', session);
-        // Retrieve the session. If you require line items in the response, you may include them by expanding line_items.
-        const sessionWithLineItems = await stripe.checkout.sessions.retrieve(
-          event.data.object.id,
-          {
-            expand: ['line_items'],
-          }
-        );
-        const lineItems = sessionWithLineItems.line_items;
     
         // Fulfill the purchase...
-        fulfillOrder(lineItems);
+        fulfillOrder(session);
 
         break;
-      // Add other event handlers as needed
+      case 'checkout.session.async_payment_succeeded':
+        console.log('Checkout session async payment succeeded:', session);
+    
+        // Fulfill the purchase...
+        fulfillOrder(session);
+
+        break;
+      case 'checkout.session.expired':
+        console.log('Checkout session expired:', session);
+    
+        // Delete the temp order...
+        deleteTempOrder(session);
+
+        break;
       default:
         console.log(`Unhandled event type ${event.type}`);
     }
@@ -90,14 +151,6 @@ exports.handleWebhook = async (req, res) => {
     console.error('Webhook error:', error.message);
     return res.status(400).json({ message: 'Webhook error', error: error.message });
   }
-
-  // if (event.type === 'checkout.session.completed') {
-  //   const session = event.data.object;
-  //   console.log('session', session);
-  //   // Do something with session
-  // }
-
-  // res.json({ received: true });
 }
 
 
