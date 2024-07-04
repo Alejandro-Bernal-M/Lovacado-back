@@ -4,13 +4,37 @@ const OrderSchema = mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
   },
   address: {
+    city: {
+      type: String,
+      required: true,
+    },
+    country: {
+      type: String,
+      required: true,
+    },
+    line1: {
+      type: String,
+      required: true,
+    },
+    line2: {
+      type: String,
+    },
+    postal_code: {
+      type: String,
+      required: true,
+    },
+    state: {
+      type: String,
+      required: true,
+    },
+  },
+  email: {
     type: String,
     required: true,
   },
-  phone: {
+  name: {
     type: String,
     required: true,
   },
