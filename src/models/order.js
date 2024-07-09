@@ -65,6 +65,7 @@ const OrderSchema = mongoose.Schema({
   orderStatus: {
     type: String,
     default: 'Order Placed',
+    enum: ['Order Placed', 'Order Accepted', 'Order Processing', 'Order Shipped', 'Order Delivered', 'Order Cancelled'],
   },
   paymentInfo: {
     id: {
