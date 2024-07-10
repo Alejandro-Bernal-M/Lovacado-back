@@ -2,7 +2,7 @@ const multer = require('multer');
 const express = require('express');
 const router = express.Router();
 const { createHomeSection, getHomeSections, updateHomeSection, deleteHomeSection } = require('../controllers/homeSection');
-const { requireSignin, requireAdmin } = require('../common-middleware');
+const { requireSignin, requireAdmin } = require('../common-middlewares');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
