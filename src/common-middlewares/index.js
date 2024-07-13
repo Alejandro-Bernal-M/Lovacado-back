@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 
 exports.requireSignin = async (req, res, next) => {
-  console.log(req.headers)
   if (req.headers.authorization) {
     const token = req.headers.authorization.split(' ')[1];
 
@@ -21,7 +20,6 @@ exports.requireSignin = async (req, res, next) => {
 
 exports.requireAdmin = async (req, res, next) => {
   if ( req.user.role === 'admin') {
-    console.log('admin', req)
     return next();
   } else {
     return res.status(401).json({ message: 'Admin access denied' });
