@@ -4,17 +4,20 @@ const path = require('path');
 
 exports.createHomeSection = async (req, res) => {
   const { title, paragraphs, order } = req.body;
+  let image = '';
   if (req.file){
-    const image = req.file.filename;
+    image = req.file.filename;
   }
 
   try {
     const homeSection = new HomeSection({
       title,
-      paragraphs,
+      paragraphs: JSON.parse(paragraphs),
       image,
       order
     });
+
+    console.log('created', homeSection);
 
     const newHomeSection = await homeSection.save();
 
