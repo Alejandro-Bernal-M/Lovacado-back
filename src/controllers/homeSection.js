@@ -117,7 +117,7 @@ exports.deleteHomeSection = async (req, res) => {
     const deletedHomeSection = await HomeSection.findByIdAndDelete(id);
 
     if (deletedHomeSection) {
-      return res.status(200).json({ message: 'Home section deleted successfully' });
+      return res.status(200).json({ message: 'Home section deleted successfully', id: deletedHomeSection._id });
     }
   }
   catch (error) {
