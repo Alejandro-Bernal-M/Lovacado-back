@@ -17,8 +17,6 @@ exports.createHomeSection = async (req, res) => {
       order
     });
 
-    console.log('created', homeSection);
-
     const newHomeSection = await homeSection.save();
 
     if (newHomeSection) {
@@ -48,7 +46,7 @@ exports.getHomeSections = async (req, res) => {
 
 exports.updateHomeSection = async (req, res) => {
   const { id } = req.params;
-  const { title, paragraphs, order } = req.body;
+  const { title, paragraphs, order, removeImage } = req.body;
   const homeSectionObj = { title, paragraphs: JSON.parse(paragraphs), order };
   if(req.file){
     homeSectionObj.image = req.file.filename;
@@ -56,20 +54,25 @@ exports.updateHomeSection = async (req, res) => {
 
   try {
     // delete the old image if a new image is uploaded
-    if (req.file) {
+    if (req.file || removeImage) {
       const homeSection = await HomeSection.findOne({
         _id: id
       });
       const oldImage = homeSection.image;
-      const imagePath = path.join(path.dirname(__dirname), 'uploads', oldImage);
-      fs.unlink(imagePath , (err  => {
-        if (err) {
-          console.error(err);
-          return;
-        }
-        console.log('Image deleted successfully');
+      if(oldImage) {
+        const imagePath = path.join(path.dirname(__dirname), 'uploads', oldImage);
+        fs.unlink(imagePath , (err  => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log('Image deleted successfully');
+        }));
       }
-      ));
+    }
+
+    if(removeImage) {
+      homeSectionObj.image = '';
     }
     
     const updatedHomeSection = await HomeSection.findOneAndUpdate(
