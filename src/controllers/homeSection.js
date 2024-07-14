@@ -49,7 +49,7 @@ exports.getHomeSections = async (req, res) => {
 exports.updateHomeSection = async (req, res) => {
   const { id } = req.params;
   const { title, paragraphs, order } = req.body;
-  const homeSectionObj = { title, paragraphs, order };
+  const homeSectionObj = { title, paragraphs: JSON.parse(paragraphs), order };
   if(req.file){
     homeSectionObj.image = req.file.filename;
   }
